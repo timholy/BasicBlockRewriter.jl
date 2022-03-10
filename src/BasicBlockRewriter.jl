@@ -21,11 +21,13 @@ end
 function rewrite_statement(stmt, rng, ssa, toslot)
     stmt === nothing && return stmt
     isa(stmt, Symbol) && return stmt
-    isa(stmt, String) && return stmt
     isa(stmt, Char) && return stmt
     isa(stmt, LineNumberNode) && return nothing   # FIXME
     isa(stmt, Module) && return stmt
     isa(stmt, UnionAll) && return stmt
+    isa(stmt, VersionNumber) && return stmt
+    isa(stmt, Regex) && return stmt
+    isa(stmt, Core.Box) && return stmt
     isa(stmt, NewvarNode) && return NewvarNode(rewrite_statement(stmt.slot, rng, ssa, toslot))
     isa(stmt, SlotNumber) && return get!(() -> SlotNumber(length(toslot)+1), toslot, stmt)
     if isa(stmt, SSAValue)
@@ -45,7 +47,9 @@ function rewrite_statement(stmt, rng, ssa, toslot)
     # last to avoid slow subtyping as often as possible
     isa(stmt, Tuple) && return map(item -> rewrite_statement(item, rng, ssa, toslot), stmt)
     isa(stmt, Number) && return stmt
-    isa(stmt, DataType) && return stmt
+    (isa(stmt, AbstractString) || isa(stmt, Base.CodeUnits)) && return stmt
+    (isa(stmt, DataType) || stmt === Union{}) && return stmt
+    (isa(stmt, Val) || isa(stmt, Enum)) && return stmt
     isa(stmt, Function) && return stmt
     error("unhandled statement ", stmt, " of type ", typeof(stmt))
 end
