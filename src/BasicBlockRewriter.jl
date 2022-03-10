@@ -46,6 +46,7 @@ function rewrite_statement(stmt, rng, ssa, toslot)
     isa(stmt, Tuple) && return map(item -> rewrite_statement(item, rng, ssa, toslot), stmt)
     isa(stmt, Number) && return stmt
     isa(stmt, DataType) && return stmt
+    isa(stmt, Function) && return stmt
     error("unhandled statement ", stmt, " of type ", typeof(stmt))
 end
 
