@@ -2,3 +2,7 @@
 BasicBlockRewriter = "53fb9386-eb44-4e91-947a-bb3af0aa8558"
 MethodAnalysis = "85b6ec6f-f7df-4429-9514-a64bcd9ee824"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+
+[compat]
+MethodAnalysis = "0.4.6"
+PyPlot = "2"

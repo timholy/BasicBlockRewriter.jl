@@ -5,10 +5,19 @@ using BasicBlockRewriter
 using MethodAnalysis
 using PyPlot: PyPlot, plt
 
-function collect_methods(top::Module)
+"""
+    collect_methods(; exclude=())
+
+Collect all methods in the session, excluding modules listed in `exclude`.
+
+    collect_methods(SomeModule; exclude=())
+
+Collect all methods in `SomeModule` or one of its sub-modules, excluding modules listed in `exclude`.
+"""
+function collect_methods(top::Union{Tuple{},Tuple{Module}}=(); exclude=())
     meths = Method[]
-    visit(top) do item
-        isa(item, Module) && return item ∉ (Core, Core.Compiler)
+    visit(top...) do item
+        isa(item, Module) && return item ∉ exclude
         if isa(item, Method)
             push!(meths, item)
             return false
@@ -17,19 +26,24 @@ function collect_methods(top::Module)
     end
     return meths
 end
+collect_methods(top::Module; kwargs...) = collect_methods((top,); kwargs...)
 
 function catalog_fragments!(fragdict, m::Method)
     try
         for frag in fragments(m)
             fragdict[frag] = get(fragdict, frag, 0) + 1
         end
-    catch
-        @warn "No code available for $m"
+    catch err
+        if isa(err, ErrorException) && err.msg == "Code for this Method is not available."
+            @warn "No code available for $m"
+            return fragdict
+        end
+        @error "$err"
     end
     return fragdict
 end
 
-meths = collect_methods(Base)
+meths = collect_methods(; exclude=child_modules(Core))
 fragdict = Dict{Vector{Any},Int}()
 for m in meths
     catalog_fragments!(fragdict, m)
