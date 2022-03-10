@@ -38,7 +38,7 @@ function catalog_fragments!(fragdict, m::Method)
             @warn "No code available for $m"
             return fragdict
         end
-        @error "$err"
+        @error "$err when processing $m"
     end
     return fragdict
 end
@@ -49,26 +49,28 @@ for m in meths
     catalog_fragments!(fragdict, m)
 end
 
-fig, axs = plt.subplots(1, 3, figsize=(8, 3))
-ax = axs[1]
-ax.hist(map(length, collect(keys(fragdict))))
-ax.set_yscale("log")
-ax.set_xlabel("# statements")
-ax.set_ylabel("# fragments")
+if lowercase(get(ENV, "CI", "false")) != "true"
+    fig, axs = plt.subplots(1, 3, figsize=(8, 3))
+    ax = axs[1]
+    ax.hist(map(length, collect(keys(fragdict))))
+    ax.set_yscale("log")
+    ax.set_xlabel("# statements")
+    ax.set_ylabel("# fragments")
 
-ax = axs[2]
-bins = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
-ax.hist(collect(values(fragdict)), bins)
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlabel("# callers")
-ax.set_ylabel("# fragments")
+    ax = axs[2]
+    bins = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+    ax.hist(collect(values(fragdict)), bins)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("# callers")
+    ax.set_ylabel("# fragments")
 
-ax = axs[3]
-kv = collect(fragdict)
-ax.scatter(length.(first.(kv)), last.(kv))
-ax.set_yscale("log")
-ax.set_xlabel("# statements")
-ax.set_ylabel("# callers")
+    ax = axs[3]
+    kv = collect(fragdict)
+    ax.scatter(length.(first.(kv)), last.(kv))
+    ax.set_yscale("log")
+    ax.set_xlabel("# statements")
+    ax.set_ylabel("# callers")
 
-fig.tight_layout()
+    fig.tight_layout()
+end

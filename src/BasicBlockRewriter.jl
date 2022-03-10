@@ -19,6 +19,9 @@ function relocatable_fragment(stmts, ssa1::Integer)
 end
 
 function rewrite_statement(stmt, rng, ssa, toslot)
+    # Pass over some concretely-typed values that appear in code
+    # These are not exhaustive, but for the time being I'd rather hear about unhandled things
+    # than to have surprises.
     stmt === nothing && return stmt
     isa(stmt, Symbol) && return stmt
     isa(stmt, String) && return stmt
@@ -26,6 +29,10 @@ function rewrite_statement(stmt, rng, ssa, toslot)
     isa(stmt, LineNumberNode) && return nothing   # FIXME
     isa(stmt, Module) && return stmt
     isa(stmt, UnionAll) && return stmt
+    isa(stmt, VersionNumber) && return stmt
+    isa(stmt, Regex) && return stmt
+    isa(stmt, Core.Box) && return stmt
+    # Handle some "nontrival" code elements
     isa(stmt, NewvarNode) && return NewvarNode(rewrite_statement(stmt.slot, rng, ssa, toslot))
     isa(stmt, SlotNumber) && return get!(() -> SlotNumber(length(toslot)+1), toslot, stmt)
     if isa(stmt, SSAValue)
@@ -42,18 +49,26 @@ function rewrite_statement(stmt, rng, ssa, toslot)
         return GlobalRef(rewrite_statement(stmt.mod, rng, ssa, toslot), rewrite_statement(stmt.name, rng, ssa, toslot))
     end
     isa(stmt, SimpleVector) && return svec([rewrite_statement(stmt[i], rng, ssa, toslot) for i = 1:length(stmt)]...)
-    # last to avoid slow subtyping as often as possible
+    # The remainder are not concretely typed.
+    # Put these last to avoid slow subtyping as often as possible.
     isa(stmt, Tuple) && return map(item -> rewrite_statement(item, rng, ssa, toslot), stmt)
+    # More passing-over (not concretely typed)
     isa(stmt, Number) && return stmt
-    isa(stmt, DataType) && return stmt
+    (isa(stmt, AbstractString) || isa(stmt, Base.CodeUnits)) && return stmt
+    (isa(stmt, DataType) || stmt === Union{}) && return stmt
+    (isa(stmt, Val) || isa(stmt, Enum)) && return stmt
     isa(stmt, Function) && return stmt
     error("unhandled statement ", stmt, " of type ", typeof(stmt))
 end
 
 function fragments(m::Method)
+    if isdefined(m, :generator) && m.generator isa Core.GeneratedFunctionStub
+        @warn "skipping generated function $m"
+        return Any[]
+    end
     src = Base.uncompressed_ast(m)
     cfg = Core.Compiler.compute_basic_blocks(src.code)
-    return [relocatable_fragment(src.code[rng.start:rng.stop], rng.start) for rng in map(bb->bb.stmts, cfg.blocks)]
+    return Any[relocatable_fragment(src.code[rng.start:rng.stop], rng.start) for rng in map(bb->bb.stmts, cfg.blocks)]
 end
 
 end

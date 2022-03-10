@@ -7,7 +7,10 @@ version = "0.1.0"
 julia = "1.6"
 
 [extras]
+MethodAnalysis = "85b6ec6f-f7df-4429-9514-a64bcd9ee824"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["MethodAnalysis", "Pkg", "PyPlot", "Test"]
