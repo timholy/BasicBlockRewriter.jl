@@ -38,7 +38,7 @@ function catalog_fragments!(fragdict, m::Method)
             @warn "No code available for $m"
             return fragdict
         end
-        @error "$err"
+        @error "$err when processing $m"
     end
     return fragdict
 end
