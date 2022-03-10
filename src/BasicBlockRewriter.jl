@@ -51,9 +51,13 @@ function rewrite_statement(stmt, rng, ssa, toslot)
 end
 
 function fragments(m::Method)
+    if isdefined(m, :generator) && m.generator isa Core.GeneratedFunctionStub
+        @warn "skipping generated function $m"
+        return Any[]
+    end
     src = Base.uncompressed_ast(m)
     cfg = Core.Compiler.compute_basic_blocks(src.code)
-    return [relocatable_fragment(src.code[rng.start:rng.stop], rng.start) for rng in map(bb->bb.stmts, cfg.blocks)]
+    return Any[relocatable_fragment(src.code[rng.start:rng.stop], rng.start) for rng in map(bb->bb.stmts, cfg.blocks)]
 end
 
 end
