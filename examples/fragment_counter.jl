@@ -30,7 +30,9 @@ collect_methods(top::Module; kwargs...) = collect_methods((top,); kwargs...)
 
 function catalog_fragments!(fragdict, m::Method)
     try
-        for frag in fragments(m)
+        for item in fragments(m)
+            isa(item, Pair{FragmentData,Fragment}) || continue
+            _, frag = item
             fragdict[frag] = get(fragdict, frag, 0) + 1
         end
     catch err
@@ -44,9 +46,14 @@ function catalog_fragments!(fragdict, m::Method)
 end
 
 meths = collect_methods(; exclude=child_modules(Core))
-fragdict = Dict{Vector{Any},Int}()
+fragdict = Dict{Fragment,Int}()
 for m in meths
     catalog_fragments!(fragdict, m)
+end
+
+function trimmax(bins, mx)
+    idx = searchsortedlast(bins, mx)
+    return bins[begin:min(idx+1, lastindex(bins))]
 end
 
 if lowercase(get(ENV, "CI", "false")) != "true"
@@ -67,10 +74,13 @@ if lowercase(get(ENV, "CI", "false")) != "true"
 
     ax = axs[3]
     kv = collect(fragdict)
-    ax.scatter(length.(first.(kv)), last.(kv))
+    x, y = length.(first.(kv)), last.(kv)
+    counts, xb, yb, img = ax.hist2d(x, y, bins=[trimmax(bins, maximum(x)), trimmax(bins, maximum(y))], norm=plt.matplotlib.colors.LogNorm())
+    ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("# statements")
     ax.set_ylabel("# callers")
+    plt.colorbar(img; ax, label="Count")
 
     fig.tight_layout()
 end
