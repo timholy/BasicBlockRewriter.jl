@@ -46,7 +46,8 @@ function rewrite_statement(stmt, rng, ssa, toslot)
         return out
     end
     if isa(stmt, GlobalRef)
-        return GlobalRef(rewrite_statement(stmt.mod, rng, ssa, toslot), rewrite_statement(stmt.name, rng, ssa, toslot))
+        # Do the lookup now (helps with uniquing)
+        return isdefined(stmt.mod, stmt.name) ? getfield(stmt.mod, stmt.name) : stmt
     end
     isa(stmt, SimpleVector) && return svec([rewrite_statement(stmt[i], rng, ssa, toslot) for i = 1:length(stmt)]...)
     # The remainder are not concretely typed.
