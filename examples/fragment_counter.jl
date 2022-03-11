@@ -49,6 +49,11 @@ for m in meths
     catalog_fragments!(fragdict, m)
 end
 
+function trimmax(bins, mx)
+    idx = searchsortedlast(bins, mx)
+    return bins[begin:min(idx+1, lastindex(bins))]
+end
+
 if lowercase(get(ENV, "CI", "false")) != "true"
     fig, axs = plt.subplots(1, 3, figsize=(8, 3))
     ax = axs[1]
@@ -67,10 +72,13 @@ if lowercase(get(ENV, "CI", "false")) != "true"
 
     ax = axs[3]
     kv = collect(fragdict)
-    ax.scatter(length.(first.(kv)), last.(kv))
+    x, y = length.(first.(kv)), last.(kv)
+    counts, xb, yb, img = ax.hist2d(x, y, bins=[trimmax(bins, maximum(x)), trimmax(bins, maximum(y))], norm=plt.matplotlib.colors.LogNorm())
+    ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("# statements")
     ax.set_ylabel("# callers")
+    plt.colorbar(img; ax, label="Count")
 
     fig.tight_layout()
 end
