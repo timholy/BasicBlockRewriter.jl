@@ -30,7 +30,9 @@ collect_methods(top::Module; kwargs...) = collect_methods((top,); kwargs...)
 
 function catalog_fragments!(fragdict, m::Method)
     try
-        for frag in fragments(m)
+        for item in fragments(m)
+            isa(item, Pair{FragmentData,Fragment}) || continue
+            _, frag = item
             fragdict[frag] = get(fragdict, frag, 0) + 1
         end
     catch err
@@ -44,7 +46,7 @@ function catalog_fragments!(fragdict, m::Method)
 end
 
 meths = collect_methods(; exclude=child_modules(Core))
-fragdict = Dict{Vector{Any},Int}()
+fragdict = Dict{Fragment,Int}()
 for m in meths
     catalog_fragments!(fragdict, m)
 end
