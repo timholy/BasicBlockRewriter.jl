@@ -6,6 +6,8 @@ using Base: mapany
 
 export fragments
 
+const emptyvec = Any[]
+
 function relocatable_fragment(stmts, ssa1::Integer)
     toslot = Dict{Union{SlotNumber,SSAValue},SlotNumber}()
     stmtso = Any[]
@@ -65,7 +67,7 @@ end
 function fragments(m::Method)
     if isdefined(m, :generator) && m.generator isa Core.GeneratedFunctionStub
         @warn "skipping generated function $m"
-        return Any[]
+        return emptyvec
     end
     src = Base.uncompressed_ast(m)
     cfg = Core.Compiler.compute_basic_blocks(src.code)
